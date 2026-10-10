@@ -198,4 +198,31 @@ class TestObjective extends TestSuite {
   }   
  
 
+  for (maximize <- Seq(false, true)) {
+    test(s"isOptimum holds once nothing better is left in the domain (maximize = $maximize)") {
+      val cp = CPSolver()
+      cp.silent = true
+      val x = CPIntVar(1 to 3)(cp)
+      if (maximize) cp.maximize(x) else cp.minimize(x)
+      cp.search(binaryStatic(Seq(x)))
+      cp.start()
+      cp.objective.isOptimum() should be(true)
+    }
+
+    test(s"a relaxed objective lets the search reach its worst value again (maximize = $maximize)") {
+      val cp = CPSolver()
+      cp.silent = true
+      val x = CPIntVar(1 to 3)(cp)
+      if (maximize) cp.maximize(x) else cp.minimize(x)
+      cp.search(binaryStatic(Seq(x)))
+      cp.start()
+      cp.obj(x).relax()
+      // The worst value first: 1 when maximizing, 3 when minimizing
+      var first = 0
+      cp.onSolution { first = x.value }
+      cp.search(binaryStaticIdx(Seq(x), _ => if (maximize) x.min else x.max))
+      cp.start(nSols = 1).nSols should be(1)
+      first should be(if (maximize) 1 else 3)
+    }
+  }
 }

@@ -27,10 +27,10 @@ import oscar.algo.search.Objective
  */
 abstract class CPObjectiveUnit(val objVar: CPIntVar, val n: String = "") extends Objective {
   
-  // Upper bound of the objective
-  protected val lb = objVar.min - 1 // Avoids to remove the min value in the first propagate
   // Lower bound of the objective
-  protected val ub = objVar.max + 1 // Avoids to remove the max value in the first propagate
+  protected val lb = objVar.min
+  // Upper bound of the objective
+  protected val ub = objVar.max
   // Tightening mode of the objective
   protected var tightenType = StrongTighten
   // Best so far value of the objective (the one recorded on the last tighten)
@@ -110,11 +110,11 @@ class CPObjectiveUnitMinimize(objVar: CPIntVar, n: String = "") extends CPObject
     objVar.updateMax(newBound-delta) 
   }
   def updateBestBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMin(newBound+delta)
-  def worstBound: Int = ub
+  def worstBound: Int = ub + 1 // Past the domain, so the first propagation and relax() remove no value
   def bestBound: Int = lb
   
   // Init best
-  best = ub
+  best = worstBound
 }
 
 /** Best  : largest value
@@ -128,9 +128,9 @@ class CPObjectiveUnitMaximize(objVar: CPIntVar, n: String = "") extends CPObject
   def isMin: Boolean = false
   def updateWorstBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMin(newBound+delta)
   def updateBestBound(newBound: Int, delta: Int = 0): Unit = objVar.updateMax(newBound-delta)
-  def worstBound: Int = lb
+  def worstBound: Int = lb - 1 // Past the domain, so the first propagation and relax() remove no value
   def bestBound: Int = ub
   
   // Init best
-  best = lb
+  best = worstBound
 }
